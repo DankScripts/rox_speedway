@@ -351,23 +351,33 @@ end)
 --------------------------------------------------------------------------------
 -- FINISH TELEPORT (with fade)
 --------------------------------------------------------------------------------
+
 RegisterNetEvent("speedway:client:finishTeleport", function(coords)
-    -- turn off HUD
     inRace = false
 
-    -- fade out
+    -- fade out first
     DoScreenFadeOut(1000)
     while not IsScreenFadedOut() do Wait(0) end
 
-    -- teleport ped out
     local ped = PlayerPedId()
+
+    -- if in vehicle, delete it during fade out
+    if IsPedInAnyVehicle(ped, false) then
+        local veh = GetVehiclePedIsIn(ped, false)
+        TaskLeaveVehicle(ped, veh, 0)
+        Wait(500)
+        DeleteVehicle(veh)
+    end
+
+    -- teleport player while screen is black
     SetEntityCoords(ped, coords.x, coords.y, coords.z, false, false, false, true)
     SetEntityHeading(ped, coords.w)
 
-    -- small pause then fade back in
+    -- wait a bit, then fade back in
     Wait(500)
     DoScreenFadeIn(1000)
 end)
+
 
 -- FUEL SYSTEM AUTO DETECTION
 RegisterNetEvent("speedway:client:fillFuel", function(netId)

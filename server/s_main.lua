@@ -204,7 +204,7 @@ RegisterNetEvent("speedway:startRace", function(lobbyName)
     for i, pid in ipairs(lobby.players) do
         lib.callback("speedway:getVehicleChoice", pid, function(model)
             if model then selected[pid] = model end
-            if #lobby.players == table.count(selected) then
+            if #lobby.players == (function() local c=0 for _ in pairs(selected) do c=c+1 end return c end)() then
                 for idx, p in ipairs(lobby.players) do
                     local spawn = config.GridSpawnPoints[idx]
                     local veh   = CreateVehicle(joaat(selected[p]), spawn.x, spawn.y, spawn.z, spawn.w, true, false)
