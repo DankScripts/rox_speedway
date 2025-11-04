@@ -9,7 +9,7 @@ _Originally based on [KOA_ROX_SPEEDWAY by MaxSuperTech](https://github.com/MaxSu
 - For **qb-core** only  
 - Uses **qb-target** only (no ox_target support)  
 - **Notification system** supports **okokNotify**, **ox_lib**, or **rtx_notify**  
-- **Auto-detects fuel system** (LegacyFuel, cdn-fuel, ox_fuel, or okokGasStation)  
+- **Auto-detects fuel system** (LegacyFuel, cdn-fuel, ox_fuel, okokGasStation, or lc_fuel)  
 - **Checkpoint spheres** & **poly-zone finish line** for anti-cheat and lap detection  
 - **Driver position HUD**, live on-the-fly ranking  
 - Create / join custom lobbies  
@@ -85,7 +85,7 @@ Flicker avoidance:
 - Pour **qb-core** uniquement  
 - Utilise exclusivement **qb-target** (pas de support ox_target)  
 - **Système de notifications** compatible **okokNotify**, **ox_lib** ou **rtx_notify**  
-- **Détection automatique du système de carburant** (LegacyFuel, cdn-fuel, ox_fuel ou okokGasStation)  
+- **Détection automatique du système de carburant** (LegacyFuel, cdn-fuel, ox_fuel, okokGasStation ou lc_fuel)  
 - **Sphères de checkpoints** & **zone poly** pour la ligne d’arrivée  
 - **HUD de position des pilotes**, classement en temps réel  
 - Création / rejoindre de lobbies personnalisés  
@@ -160,7 +160,7 @@ Commande runtime (hôte/admin) :
 - Nur für **qb-core**  
 - Verwendet nur **qb-target** (keine ox_target-Unterstützung)  
 - **Benachrichtigungssystem** unterstützt **okokNotify**, **ox_lib** oder **rtx_notify**  
-- **Automatische Erkennung des Kraftstoffsystems** (LegacyFuel, cdn-fuel, ox_fuel oder okokGasStation)  
+- **Automatische Erkennung des Kraftstoffsystems** (LegacyFuel, cdn-fuel, ox_fuel, okokGasStation oder lc_fuel)  
 - **Checkpoint-Sphären** & **Poly-Zone** für Ziellinie/Anti-Cheat  
 - **Fahrerpositions-HUD** in Echtzeit  
 - Erstellen / Beitreten von benutzerdefinierten Lobbys  
