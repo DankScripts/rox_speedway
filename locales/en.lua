@@ -27,4 +27,10 @@ return {
   best_lap                    = "Best Lap: {1}s",
   player_joined_title         = "🏁 Speedway",
   player_joined               = "{1} joined the lobby.",
+  -- Added for vehicle selection countdown and control flow
+  choose_vehicle_title        = "Choose Your Vehicle",
+  choose_vehicle_label        = "Vehicle",
+  vehicle_select_timeout      = "Removed: no vehicle selected in time.",
+  race_cancelled              = "Race cancelled: no valid participants.",
+  removed_from_lobby          = "You have been removed from the lobby.",
 }

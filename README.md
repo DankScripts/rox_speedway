@@ -1,6 +1,5 @@
-# 🏁 ROX_SPEEDWAY - Custom Race Lobby System originally based on
-# 🏁 KOA_ROX_SPEEDWAY - Custom Race Lobby System (Original Resource Link Below)
-# https://github.com/MaxSuperTech/max_rox_speedway
+# 🏁 ROX_SPEEDWAY – Custom Race Lobby System  
+_Originally based on [KOA_ROX_SPEEDWAY by MaxSuperTech](https://github.com/MaxSuperTech/max_rox_speedway)_
 
 🔥 Multiplayer race system with dynamic lobbies, countdown, laps & vehicle selection!
 
@@ -28,13 +27,53 @@
 - **Optional “Raceway Leaderboard Display”** integration by Glitchdetector  
 
 ### Notes
-- Some code is original, most has been replaced/rewritten by the author  
-- Config is still a WIP  
-- Props (track barriers, obstacles) are only partially placed for "Short_Track" & "Drift_Track"  
-- Customize track layout and **checkpoints** in `config.lua`  
-- Supports both **sphere** and **poly-zone** finish line triggers  
-- **Leaderboard** should only be enabled if you have the required prop from Glitchdetector  
-  - https://github.com/glitchdetector/amir-leaderboard  
+
+- [AMIR Leaderboard](https://github.com/glitchdetector/amir-leaderboard)
+
+**Race Start Delay:**
+You can now configure the race start countdown delay in `config/config.lua`:
+
+```lua
+Config.RaceStartDelay = 3 -- Default is 3 seconds for testing, set up to 10 for longer countdown
+```
+
+Players generally prefer 10 seconds or less. Adjust as needed for your server.
+
+### AMIR Leaderboard (optional)
+
+If you use Glitchdetector's Raceway Leaderboard Display, this resource can drive it live with the same order as the HUD.
+
+- Repo: [AMIR Leaderboard](https://github.com/glitchdetector/amir-leaderboard)
+- Enable in `config/config.lua` via `Config.Leaderboard.enabled = true`
+- Title shows leader's lap like `2/3`
+
+Config section (excerpt):
+
+```lua
+Config.Leaderboard = {
+  enabled = true,
+  updateIntervalMs = 1000,   -- push cadence; lower can cause flicker
+  toggleIntervalMs = 2000,   -- how often to flip Names <-> Times
+  viewMode = "toggle",       -- "toggle" or "names" ("times" is not supported alone)
+  timeMode = "total",        -- how Times are computed when shown: "total" or "lap"
+}
+```
+
+Modes:
+
+- names: always shows player names (stable, minimal updates)
+- toggle: flips between Names and Times every `toggleIntervalMs`
+  - Times lines keep the same order as the HUD and are in milliseconds (AMIR formats to MM:SS)
+  - `timeMode` controls whether Times are total race time so far or current lap time
+
+Runtime override (host/admin):
+
+- In chat: `/lb names` or `/lb toggle`
+- From server console: `lb names <LobbyName>` or `lb toggle <LobbyName>`
+
+Flicker avoidance:
+
+- The server only sends AMIR updates on actual content changes (order/lap title) or when the toggle flips, which prevents the board from flashing.
 
 🛠️ Contributions & feedback welcome!
 
@@ -64,7 +103,7 @@
 - Intégration optionnelle de **“Raceway Leaderboard Display”** par Glitchdetector  
 
 ### Remarques
-- Une partie du code est originale, le reste a été réécrit  
+- Une partie du code est originale ; d’importantes portions ont été remplacées ou réécrites par DrCannabis  
 - Config en cours de développement  
 - Props pour barrières & obstacles partiellement placés pour "Short_Track" & "Drift_Track"  
 - Personnalisez circuit et **checkpoints** dans `config.lua`  
@@ -100,7 +139,7 @@
 - Optionale **“Raceway Leaderboard Display”** Integration von Glitchdetector  
 
 ### Hinweise
-- Teile des Codes sind original, der Großteil wurde neu geschrieben  
+- Ein Teil des Codes ist original; wesentliche Teile wurden von DrCannabis ersetzt oder neu geschrieben  
 - Konfiguration noch in Arbeit  
 - Props (Streckenbarrieren, Hindernisse) nur für „Short_Track“ & „Drift_Track“ teilweise platziert  
 - Passen Sie Streckenlayout und **Checkpoints** in `config.lua` an  

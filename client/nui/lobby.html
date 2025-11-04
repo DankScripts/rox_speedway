@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Lobby Waiting Room</title>
+  <style>
+    body { background: rgba(20,20,30,0.95); color: #fff; font-family: Arial, sans-serif; margin: 0; }
+    .container { max-width: 400px; margin: 40px auto; background: #222; border-radius: 10px; box-shadow: 0 0 20px #000; padding: 24px; }
+    h2 { text-align: center; margin-bottom: 16px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+    th, td { padding: 8px; border-bottom: 1px solid #444; text-align: left; }
+    th { background: #333; }
+    .host { color: #ffd700; font-weight: bold; }
+    .waiting { text-align: center; color: #aaa; font-size: 14px; }
+    .start-btn { display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2 id="lobbyName">Lobby</h2>
+    <table>
+      <thead>
+        <tr><th>Player</th></tr>
+      </thead>
+      <tbody id="memberList">
+        <tr><td class="waiting">Waiting for players...</td></tr>
+      </tbody>
+    </table>
+    <button id="startRaceBtn" class="start-btn">Start Race</button>
+  </div>
+  <script src="lobby.js"></script>
+</body>
+</html>

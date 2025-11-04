@@ -5,23 +5,30 @@ author 'DrCannabis'
 description '(Original Author Koala) Alternate version of max_rox_speedway edited by DrCannabis'
 
 shared_scripts {
-	'@ox_lib/init.lua',
-    '@qb-core/shared/locale.lua',
+  '@ox_lib/init.lua',
+  'config/config.lua',
+  'locales/*.lua',           -- load your Lua locale modules
 }
 
 client_scripts {
-    'client/*.lua',
+  'client/c_fuel.lua',       -- <-- matches your filename
+  'client/c_keys.lua',       -- centralized vehicle-keys support
+  'client/c_customs.lua',    -- vehicle cosmetics & paints
+  'client/c_function.lua',
+  'client/c_main.lua',
+  --'client/c_pit.lua',      -- pit stop system (WIP NOT READY)
 }
 
 server_scripts {
-	'@oxmysql/lib/MySQL.lua',
-	'server/s_main.lua'
-   
+  '@oxmysql/lib/MySQL.lua',
+  'server/s_main.lua',
 }
 
+ui_page 'client/nui/timeout.html'
+
 files {
-    'config/config.lua',
-    'locales/*.lua'
+  'locales/*.lua',
+  'client/nui/timeout.html',
 }
 
 dependencies {
@@ -32,4 +39,3 @@ dependencies {
 }
 
 lua54 'yes'
-use_experimental_fxv2_oal 'yes'

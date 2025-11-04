@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Speedway Notice</title>
+  <style>
+    html, body { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; }
+    .overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.65); }
+    .card { width: 420px; max-width: 90vw; background: #111827; color: #fff; border: 1px solid #374151; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
+    .header { padding: 14px 16px; border-bottom: 1px solid #374151; font-weight: 600; display:flex; align-items:center; gap:8px; }
+    .body { padding: 16px; line-height: 1.5; color: #e5e7eb; }
+    .actions { padding: 12px 16px; border-top: 1px solid #374151; display: flex; justify-content: flex-end; gap: 8px; }
+    button { background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 10px 14px; font-weight: 600; cursor: pointer; }
+    button:hover { background: #1d4ed8; }
+    .titleIcon { font-size: 18px; }
+  </style>
+</head>
+<body>
+  <div class="overlay" id="overlay">
+    <div class="card">
+      <div class="header"><span class="titleIcon">🏁</span> Speedway</div>
+      <div class="body" id="msg">You were removed. Please click Dismiss to continue.</div>
+      <div class="actions">
+        <button id="dismiss">Dismiss</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    const overlay = document.getElementById('overlay');
+    const msg = document.getElementById('msg');
+    const dismiss = document.getElementById('dismiss');
+    const resource = (window.GetParentResourceName && GetParentResourceName()) || 'qb_rox_speedway';
+
+    window.addEventListener('message', (e) => {
+      const data = e.data || {};
+      if (data.action === 'showTimeoutModal') {
+        msg.textContent = data.message || 'You were removed.';
+        overlay.style.display = 'flex';
+      } else if (data.action === 'hideTimeoutModal') {
+        overlay.style.display = 'none';
+      }
+    });
+
+    dismiss.addEventListener('click', () => {
+      fetch(`https://${resource}/timeoutDismiss`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      }).catch(() => {});
+    });
+  </script>
+</body>
+</html>

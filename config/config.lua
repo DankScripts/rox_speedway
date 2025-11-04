@@ -1,20 +1,84 @@
 Config = Config or {}
 
 Config.Locale = "en"  -- change to "fr" or "de" as needed
-Config.Locales = {
-  en = require("locales.en"),
-  fr = require("locales.fr"),
-  de = require("locales.de"),
-}
+-- Race start delay in seconds (time before race begins after countdown)
+-- Default is 3 for testing, but most players prefer 10 seconds or less
+Config.RaceStartDelay = 3
+-- How often clients report progress to the server (ms). Lower = more responsive positions.
+-- Keep between 75 and 200 to balance responsiveness vs. server load.
+Config.ProgressTickMs = 150
+-- Use front bumper corners (left/right) in addition to center and take the max
+-- along-track distance. Helps tiny nose differences decide position on curves.
+Config.DistanceUseNoseCorners = true
 
-Config.debug = false            -- Set to true to visualize zones
+-- Debug toggles
+Config.DebugPrints = false      -- Console [DEBUG] logs (ranking/progress/etc)
+Config.ZoneDebug   = false      -- Polyzone/lib.zones visualization (red spheres)
+
+-- If your in-race positions appear reversed (the car behind shows 1/2),
+-- set this to true to invert the displayed rank without changing core sorting.
+Config.RankingInvert = false
 
 --- Choose your notification provider: "ox_lib", "okokNotify" or "rtx_notify"
 Config.NotificationProvider = "okokNotify"
 
 --- Optional if you have Raceway Leaderboard Display by Glitchdetector
 Config.Leaderboard = {
-    enabled = false,
+    enabled = true,
+    -- How often to push updates to AMIR (ms). Too frequent causes flicker.
+    updateIntervalMs = 1000,
+    -- How often to flip between Names and Times on the board (ms)
+    toggleIntervalMs = 2000,
+    -- Display mode for AMIR board rows:
+    --  - "toggle": alternate Names and Times every toggleIntervalMs
+    --  - "names":  always show player names
+    viewMode = "toggle",
+    -- What time to show on the AMIR toggle (names/times):
+    --  - "total": total race time so far per racer (default)
+    --  - "lap": current lap time per racer
+    timeMode = "total",
+}
+
+--- Optional per-segment path hints to better approximate curved track sections
+--- Use this to break long chords (e.g., hairpins) into smaller subsegments so
+--- distance/ranking stays accurate before reaching the next checkpoint.
+--- Indexing:
+---   0 = Start/Finish -> CP1
+---   i = CPi -> CP(i+1)
+---   n = CPn -> Start/Finish
+Config.SegmentHints = {
+    Short_Track = {
+        -- Hairpin into CP1: three hint points to match the actual path
+        [0] = {
+            vector3(-2481.06, 8167.71, 40.65),
+            vector3(-2462.81, 8236.75, 42.85),
+            vector3(-2525.66, 8231.02, 38.05),
+        },
+        -- CP1 -> CP2: short straight, medium right sweeper, then sharp left into CP2
+        [1] = {
+            -- start of right curve (after a short straight from CP1)
+            vector3(-2610.58, 8156.54, 40.77),
+            -- center/apex of long right curve
+            vector3(-2668.76, 8150.48, 40.85),
+            -- end of right curve
+            vector3(-2691.44, 8199.16, 40.85),
+            -- straight stretch before the sharp left into CP2
+            vector3(-2697.72, 8314.08, 40.87),
+        },
+        -- CP2 to CP3 not needed (straight line of sight)
+        -- CP3 -> Finish: long 180° left-hander flowing to the start/finish straight
+        [2] = {
+            -- start of left-hand curve just after CP3
+            vector3(-3115.57, 8307.25, 36.48),
+            -- halfway through the curve (apex)
+            vector3(-3208.71, 8210.23, 44.61),
+            -- end of curve leading onto the straight to the finish line
+            vector3(-3133.31, 8121.73, 45.53),
+        },
+    },
+    Drift_Track = {},
+    Speed_Track = {},
+    Long_Track  = {},
 }
 
 --- START / FINISH LINE POLYGON (used for ROSZ detection if you ever need it)
@@ -47,8 +111,45 @@ Config.Checkpoints = {
     },
 }
 
+Config.PitCrewZones = {
+    -- Zone #1 (replace coords with your pit‐lane location)
+    {  
+      coords = vector3(-2865.45, 8113.30, 43.74),   
+      heading = 180.0,    -- NPCs will face south
+      radius = 6.0  
+    },
+  
+    -- Zone #2
+    {  
+      coords = vector3(-2840.76, 8109.64, 43.55),   
+      heading = 180.0,    -- NPCs will face south
+      radius = 6.0  
+    },
+
+    -- Server owners can add more:  
+    -- Example zone #3 (replace coords with your pit‐lane location)
+    -- {  
+      -- coords = vector3(x, y, z),   
+      -- heading = 180.0,    -- NPCs will face south
+      -- radius = 6.0  
+    -- },
+}
+
+-- Pit-crew settings
+Config.PitCrewModel       = 'ig_mechanic_01'  -- ped model for all pit crew
+Config.PitCrewIdleOffsets = {
+    vector3(-2.0,  0.0,  0.0),  -- two idle spots (left/right)
+    vector3( 2.0,  0.0,  0.0),
+}
+Config.PitCrewCrewOffsets = {
+    vector3( 0.0, -2.0,  0.0),  -- refuel spot (rear)
+    vector3( 0.0,  2.0,  0.0),  -- hood spot (front)
+    vector3( 2.0,  0.0,  0.0),  -- jack spot (side)
+}
+
+
 --- OUT COORDS (where to send you when you finish)
-Config.outCoords = vec4(-2896.1172, 8077.2363, 44.4940, 183.6707)
+Config.outCoords = vector4(-2896.1172, 8077.2363, 44.4940, 183.6707)
 
 --- LOBBY PED
 Config.LobbyPed = {
@@ -62,14 +163,14 @@ Config.TrackProps = {
         {
             prop  = 'sum_prop_ac_tyre_wall_lit_0l1',
             cords = {
-                vec4(-2705.38, 8340.52, 41.36, 338.00),
-                vec4(-2700.06, 8335.04, 41.48, 338.00),
-                vec4(-2694.68, 8328.46, 41.47, 338.00),
-                vec4(-2689.42, 8323.68, 41.47, 338.00),
-                vec4(-2683.45, 8320.36, 41.47, 338.00),
-                vec4(-2679.92, 8315.29, 41.47, 338.00),
-                vec4(-2674.74, 8310.80, 41.47, 338.00),
-                vec4(-2905.52, 8346.46, 36.11,  81.12),
+                vector4(-2705.38, 8340.52, 41.36, 338.00),
+                vector4(-2700.06, 8335.04, 41.48, 338.00),
+                vector4(-2694.68, 8328.46, 41.47, 338.00),
+                vector4(-2689.42, 8323.68, 41.47, 338.00),
+                vector4(-2683.45, 8320.36, 41.47, 338.00),
+                vector4(-2679.92, 8315.29, 41.47, 338.00),
+                vector4(-2674.74, 8310.80, 41.47, 338.00),
+                vector4(-2905.52, 8346.46, 36.11,  81.12),
             }
         }
     },
@@ -166,9 +267,9 @@ Config.RaceVehicles = {
 
 --- GRID SPAWN POINTS
 Config.GridSpawnPoints = {
-    vec4(-2762.9260, 8076.5244, 42.6784, 264.5850),
-    vec4(-2764.9563, 8079.9731, 42.6893, 266.6010),
-    vec4(-2767.7869, 8083.4434, 42.7054, 266.2213),
+    vector4(-2762.9260, 8076.5244, 42.6784, 264.5850),
+    vector4(-2764.9563, 8079.9731, 42.6893, 266.6010),
+    vector4(-2767.7869, 8083.4434, 42.7054, 266.2213),
 }
 
 --- ADJUSTABLE FINISH‐LINE SPHERE (separate from checkpoints)
