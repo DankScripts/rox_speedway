@@ -20,11 +20,11 @@ Config.ZoneDebug   = false      -- Polyzone/lib.zones visualization (red spheres
 Config.RankingInvert = false
 
 --- Choose your notification provider: "ox_lib", "okokNotify" or "rtx_notify"
-Config.NotificationProvider = "okokNotify"
+Config.NotificationProvider = "ox_lib"
 
 --- Optional if you have Raceway Leaderboard Display by Glitchdetector
 Config.Leaderboard = {
-    enabled = true,
+    enabled = false,
     -- How often to push updates to AMIR (ms). Too frequent causes flicker.
     updateIntervalMs = 1000,
     -- How often to flip between Names and Times on the board (ms)
