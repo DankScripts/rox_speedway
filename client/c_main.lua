@@ -64,9 +64,9 @@ function ShowLobbyDisplay(name, members)
     if not lobbyHintShown then
         lobbyHintShown = true
         if SpeedwayNotify then
-            SpeedwayNotify("Speedway", ("Press %s to interact with the lobby. You can remap it in Settings > Key Bindings > FiveM under 'Speedway: Interact with Lobby Panel'. Or use /lobby."):format(Config.InteractKeyLabel or 'F2'), "inform", 7000)
+            SpeedwayNotify(loc("player_joined_title"), loc("notify_interact_full", (Config.InteractKeyLabel or 'F2')), "inform", 7000)
         else
-            print(("[Speedway] Hint: Press %s to interact with the lobby (or use /lobby). You can remap in Settings > Key Bindings."):format(Config.InteractKeyLabel or 'F2'))
+            print(("[Speedway] " .. loc("hint_interact", (Config.InteractKeyLabel or 'F2'))))
         end
     end
 end
@@ -121,14 +121,14 @@ CreateThread(function()
             SetTextFont(4); SetTextScale(0.35,0.35); SetTextCentre(true)
             SetTextColour(255,255,255,255); SetTextOutline()
             SetTextEntry("STRING")
-            AddTextComponentString("Lobby: " .. lobbyDisplayName)
+            AddTextComponentString((loc("lobby_word") .. ": " .. lobbyDisplayName))
             DrawText(0.10, 0.44)
             -- Draw member list
             for i, member in ipairs(lobbyDisplayMembers) do
                 SetTextFont(0); SetTextScale(0.25,0.25); SetTextCentre(false)
                 SetTextColour(255,255,255,255); SetTextOutline()
                 SetTextEntry("STRING")
-                local label = member .. (i == 1 and " (Host)" or "")
+                local label = member .. (i == 1 and (" " .. loc("host_tag")) or "")
                 AddTextComponentString(label)
                 DrawText(0.02, 0.47 + (i * 0.015))
             end
@@ -138,6 +138,22 @@ end)
 -- NUI readiness handshake
 RegisterNUICallback('nuiReady', function(_, cb)
     nuiReady = true
+    -- send i18n pack to NUI
+    SendNUIMessage({
+        action = 'i18n',
+        i18n = {
+            speedwayTitle = loc('speedway_title'),
+            lobby         = loc('lobby_word'),
+            playerHeader  = loc('player_header'),
+            waiting       = loc('waiting_for_players'),
+            leave         = loc('leave_lobby'),
+            start         = loc('start_race'),
+            hostTag       = loc('host_tag'),
+            hintTemplate  = loc('hint_interact', '{KEY}'),
+            modalRemoved  = loc('removed_modal_message'),
+            modalDismiss  = loc('dismiss'),
+        }
+    })
     if cb then cb({ ok = true }) end
 end)
 
@@ -170,11 +186,11 @@ RegisterCommand('lobby', function()
     if lobbyNuiVisible and not inRace and not timeoutModalActive then
         ToggleLobbyInteract()
     else
-        SpeedwayNotify("Speedway", "Lobby controls are only available while a lobby is visible.", "error", 3500)
+    SpeedwayNotify(loc("speedway_title"), loc("lobby_controls_only_visible"), "error", 3500)
     end
 end, false)
 -- Default keybind: Left Alt (LMENU). Players can remap via FiveM key bindings.
-RegisterKeyMapping('speedway_lobby_interact', 'Speedway: Interact with Lobby Panel', 'keyboard', Config.InteractKey or 'F2')
+RegisterKeyMapping('speedway_lobby_interact', loc('keybind_interact_label'), 'keyboard', Config.InteractKey or 'F2')
 
 -- Removed qb-target lobbyInteract event: interaction now uses F6 toggle only
 
@@ -451,7 +467,7 @@ CreateThread(function()
 
     local blip = AddBlipForCoord(cfg.coords.x, cfg.coords.y, cfg.coords.z)
     SetBlipSprite(blip, 315); SetBlipDisplay(blip, 4); SetBlipScale(blip, 0.8); SetBlipAsShortRange(blip, false)
-    BeginTextCommandSetBlipName("STRING"); AddTextComponentString("Roxwood Speedway"); EndTextCommandSetBlipName(blip)
+    BeginTextCommandSetBlipName("STRING"); AddTextComponentString(loc('blip_name')); EndTextCommandSetBlipName(blip)
 end)
 
 --------------------------------------------------------------------------------
@@ -598,7 +614,7 @@ CreateThread(function()
             SetTextFont(4); SetTextScale(0.5,0.5); SetTextCentre(true)
             SetTextColour(255,200,50,255); SetTextOutline()
             SetTextEntry("STRING")
-            AddTextComponentString(("Select your vehicle (%02d)"):format(sec))
+            AddTextComponentString((loc('select_vehicle_timer_fmt')):format(sec))
             DrawText(0.5, 0.12)
         end
     end

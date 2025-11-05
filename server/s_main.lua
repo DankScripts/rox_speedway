@@ -142,7 +142,7 @@ RegisterCommand('lb', function(src, args)
   amirState[lobbyName].showNames = true -- always start on names view
 
   local msg = ('AMIR view mode set to %s for lobby %s'):format(mode, tostring(lobbyName))
-  if src == 0 then print('[Speedway] ' .. msg) else TriggerClientEvent('ox_lib:notify', src, { title = 'Speedway', description = msg, type = 'success' }) end
+  if src == 0 then print('[Speedway] ' .. msg) else TriggerClientEvent('ox_lib:notify', src, { title = locale('speedway_title'), description = msg, type = 'success' }) end
 end, false)
 
 math.randomseed(GetGameTimer())
@@ -154,7 +154,7 @@ lib.callback.register("speedway:getLobbies", function(source)
   local result = {}
   for name, lobby in pairs(lobbies) do
     table.insert(result, {
-      label = name .. " | " .. lobby.track .. " (" .. #lobby.players .. " players)",
+      label = locale("lobby_label_template", name, lobby.track, #lobby.players),
       value = name
     })
   end

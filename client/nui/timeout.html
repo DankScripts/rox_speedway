@@ -95,6 +95,19 @@
     const msg = document.getElementById('msg');
     const dismiss = document.getElementById('dismiss');
   const resource = (window.GetParentResourceName && GetParentResourceName()) || 'rox_speedway';
+    // i18n labels (fallbacks)
+    let I18N = {
+      speedwayTitle: 'Speedway',
+      lobby: 'Lobby',
+      playerHeader: 'Player',
+      waiting: 'Waiting for players...',
+      leave: 'Leave Lobby',
+      start: 'Start Race',
+      hostTag: '(Host)',
+      hintTemplate: 'Press {1} to interact with the lobby.',
+      modalRemoved: 'You were removed. Please click Dismiss to continue.',
+      modalDismiss: 'Dismiss',
+    };
 
     // Lobby elements
   const lobbyOverlay = document.getElementById('lobbyOverlay');
@@ -105,32 +118,52 @@
   const hint = document.getElementById('hint');
   let lobbyState = { hostName: null, lobbyName: null };
 
+    function fmtHint(tpl, key) {
+      if (!tpl) return `Press ${key} to interact with the lobby.`;
+      if (tpl.indexOf('{1}') !== -1) return tpl.replace('{1}', key);
+      if (tpl.indexOf('{KEY}') !== -1) return tpl.replace('{KEY}', key);
+      if (tpl.indexOf('%s') !== -1) return tpl.replace('%s', key);
+      return tpl;
+    }
+
     window.addEventListener('message', (e) => {
       const data = e.data || {};
-      if (data.action === 'showTimeoutModal') {
-        msg.textContent = data.message || 'You were removed.';
+      if (data.action === 'i18n' && data.i18n) {
+        I18N = { ...I18N, ...data.i18n };
+        // apply static labels on modal
+        const hdr = document.querySelector('.card .header');
+        if (hdr) hdr.innerHTML = `<span class="titleIcon">🏁</span> ${I18N.speedwayTitle || 'Speedway'}`;
+        dismiss.textContent = I18N.modalDismiss || 'Dismiss';
+      } else if (data.action === 'showTimeoutModal') {
+        msg.textContent = data.message || I18N.modalRemoved || 'You were removed.';
         overlay.style.display = 'flex';
       } else if (data.action === 'hideTimeoutModal') {
         overlay.style.display = 'none';
       } else if (data.action === 'showLobby') {
-        lobbyTitle.textContent = data.lobbyName || 'Lobby';
+        lobbyTitle.textContent = data.lobbyName || (I18N.lobby || 'Lobby');
         const members = Array.isArray(data.members) ? data.members : [];
         lobbyState.hostName = data.hostName || null;
         lobbyState.lobbyName = data.lobbyName || null;
         lobbyMembers.innerHTML = '';
         if (!members.length) {
-          lobbyMembers.innerHTML = '<tr><td class="waiting">Waiting for players...</td></tr>';
+          lobbyMembers.innerHTML = `<tr><td class="waiting">${I18N.waiting || 'Waiting for players...'}</td></tr>`;
         } else {
           members.forEach((m, idx) => {
             const tr = document.createElement('tr');
             const isHost = data.hostName ? (m === data.hostName) : (idx === 0);
-            tr.innerHTML = `<td${isHost ? ' class="host"' : ''}>${m}${isHost ? ' (Host)' : ''}</td>`;
+            const hostTag = isHost ? ` ${I18N.hostTag || '(Host)'}` : '';
+            tr.innerHTML = `<td${isHost ? ' class="host"' : ''}>${m}${hostTag}</td>`;
             lobbyMembers.appendChild(tr);
           });
         }
         // Only host sees Start button (client provides meIsHost flag)
         const meIsHost = data.meIsHost === true || false;
         btnStart.style.display = meIsHost ? 'inline-flex' : 'none';
+        // Update dynamic labels
+        const th = document.querySelector('.lobbyTable thead th');
+        if (th) th.textContent = I18N.playerHeader || 'Player';
+        btnStart.textContent = I18N.start || 'Start Race';
+        btnLeave.textContent = I18N.leave || 'Leave Lobby';
         lobbyOverlay.style.display = 'flex';
       } else if (data.action === 'lobbyFocus') {
         const on = !!data.on;
@@ -175,8 +208,8 @@
     window.addEventListener('message', (e) => {
       const data = e.data || {};
       if (data.action === 'showLobby') {
-        const label = (data.keyLabel && String(data.keyLabel)) || 'Left Alt';
-        hint.textContent = `Press ${label} to interact with the lobby.`;
+        const label = (data.keyLabel && String(data.keyLabel)) || 'F2';
+        hint.textContent = fmtHint(I18N.hintTemplate, label);
       }
     });
 
