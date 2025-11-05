@@ -29,20 +29,55 @@ local hasLobby             = false
 local lobbyDisplayActive = false
 local lobbyDisplayMembers = {}
 local lobbyDisplayName = ""
+local nuiReady = false
+local lobbyNuiVisible = false   -- track if the NUI lobby panel is currently shown
+local lobbyHintShown = false    -- avoid spamming the hint toast
 
 function ShowLobbyDisplay(name, members)
-    lobbyDisplayActive = true
-        local hostName = name:match("^([%w_]+)_%d+$") or name
-        if Config.DebugPrints then
-            print("[DEBUG] ShowLobbyDisplay called: hostName=" .. tostring(hostName) .. ", members=" .. table.concat(members, ", "))
-        end
-        lobbyDisplayActive = true
-        lobbyDisplayName = hostName
+    -- Prefer NUI lobby overlay
+    local hostName = name:match("^([%w_]+)_%d+$") or name
+    if Config.DebugPrints then
+        print("[DEBUG] ShowLobbyDisplay called: hostName=" .. tostring(hostName) .. ", members=" .. table.concat(members, ", "))
+    end
+    -- Send to NUI (timeout.html handles showLobby)
+    local meIsHost = (lobbyOwner == GetPlayerServerId(PlayerId()))
+    if not nuiReady then
+        -- Defer until UI reports ready to avoid 'no UI frame' warning
+        CreateThread(function()
+            local tries = 0
+            while not nuiReady and tries < 200 do -- up to ~10s
+                tries = tries + 1
+                Wait(50)
+            end
+            if nuiReady then
+                SendNUIMessage({ action = 'showLobby', lobbyName = hostName, hostName = hostName, members = members, meIsHost = meIsHost, keyLabel = (Config.InteractKeyLabel or 'Left Alt') })
+            end
+        end)
+    else
+        SendNUIMessage({ action = 'showLobby', lobbyName = hostName, hostName = hostName, members = members, meIsHost = meIsHost, keyLabel = (Config.InteractKeyLabel or 'Left Alt') })
+    end
+    -- Disable native draw to avoid double UI
+    lobbyDisplayActive = false
+    lobbyDisplayName = hostName
     lobbyDisplayMembers = members
+    lobbyNuiVisible = true
+    if not lobbyHintShown then
+        lobbyHintShown = true
+        if SpeedwayNotify then
+            SpeedwayNotify("Speedway", ("Press %s to interact with the lobby. You can remap it in Settings > Key Bindings > FiveM under 'Speedway: Interact with Lobby Panel'. Or use /lobby."):format(Config.InteractKeyLabel or 'F2'), "inform", 7000)
+        else
+            print(("[Speedway] Hint: Press %s to interact with the lobby (or use /lobby). You can remap in Settings > Key Bindings."):format(Config.InteractKeyLabel or 'F2'))
+        end
+    end
 end
 
 function HideLobbyDisplay()
     lobbyDisplayActive = false
+    if nuiReady then
+        SendNUIMessage({ action = 'hideLobby' })
+    end
+    lobbyNuiVisible = false
+    lobbyHintShown = false
 end
 
 -- Try to close qb-input dialog if it is open
@@ -99,6 +134,85 @@ CreateThread(function()
             end
         end
     end
+end)
+-- NUI readiness handshake
+RegisterNUICallback('nuiReady', function(_, cb)
+    nuiReady = true
+    if cb then cb({ ok = true }) end
+end)
+
+-- Toggle interact mode for the lobby tablet without permanently stealing input
+local lobbyFocus = false
+local function ToggleLobbyInteract()
+    if not nuiReady then return end
+    -- Only allow when the lobby overlay is visible
+    -- Interact mode: capture NUI focus but DO NOT keep game input (prevents camera movement)
+    lobbyFocus = not lobbyFocus
+    if lobbyFocus then
+        SetNuiFocusKeepInput(false)   -- do not pass mouse/keys to game while interacting
+        SetNuiFocus(true, true)
+    else
+        SetNuiFocusKeepInput(false)
+        SetNuiFocus(false, false)
+    end
+    SendNUIMessage({ action = 'lobbyFocus', on = lobbyFocus })
+end
+
+RegisterCommand('speedway_lobby_interact', function()
+    -- Only allow interact toggle when lobby overlay is visible and we're not in race or a blocking modal
+    if lobbyNuiVisible and not inRace and not timeoutModalActive then
+        ToggleLobbyInteract()
+    end
+end, false)
+
+-- Backup chat command if keybind isn't working; same gating rules
+RegisterCommand('lobby', function()
+    if lobbyNuiVisible and not inRace and not timeoutModalActive then
+        ToggleLobbyInteract()
+    else
+        SpeedwayNotify("Speedway", "Lobby controls are only available while a lobby is visible.", "error", 3500)
+    end
+end, false)
+-- Default keybind: Left Alt (LMENU). Players can remap via FiveM key bindings.
+RegisterKeyMapping('speedway_lobby_interact', 'Speedway: Interact with Lobby Panel', 'keyboard', Config.InteractKey or 'F2')
+
+-- Removed qb-target lobbyInteract event: interaction now uses F6 toggle only
+
+-- NUI callbacks from the tablet buttons
+RegisterNUICallback('lobbyStart', function(data, cb)
+    if lobbyOwner ~= GetPlayerServerId(PlayerId()) then cb('not_host'); return end
+    if currentLobby then TriggerServerEvent('speedway:startRace', currentLobby) end
+    -- Release focus after click
+    lobbyFocus = false
+    SetNuiFocusKeepInput(false)
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'lobbyFocus', on = false })
+    HideLobbyDisplay()
+    -- suppress auto-interact until Alt is released to avoid re-triggering instantly
+    speedwaySuppressAutoUntilAltUp = true
+    cb('ok')
+end)
+
+RegisterNUICallback('lobbyLeave', function(_, cb)
+    if currentLobby then TriggerServerEvent('speedway:leaveLobby', currentLobby) end
+    lobbyFocus = false
+    SetNuiFocusKeepInput(false)
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'lobbyFocus', on = false })
+    -- suppress auto-interact until Alt is released to avoid re-triggering instantly
+    speedwaySuppressAutoUntilAltUp = true
+    cb('ok')
+end)
+
+-- ESC from lobby tablet: return to passive preview without taking any action
+RegisterNUICallback('lobbyCancel', function(_, cb)
+    lobbyFocus = false
+    SetNuiFocusKeepInput(false)
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'lobbyFocus', on = false })
+    -- suppress auto-interact until Alt is released to avoid re-triggering instantly
+    speedwaySuppressAutoUntilAltUp = true
+    cb('ok')
 end)
 local currentProps         = {}
 local racerCheckpointIndex = 0
@@ -275,8 +389,7 @@ end
 --------------------------------------------------------------------------------
 -- 6) UNIVERSAL NOTIFY & ALERT
 --------------------------------------------------------------------------------
-    HideLobbyDisplay()
-local function SpeedwayNotify(title, description, ntype, duration)
+function SpeedwayNotify(title, description, ntype, duration)
     local provider = Config.NotificationProvider or "ox_lib"
     if provider == "okokNotify" then
         exports['okokNotify']:Alert(title or "", description or "", duration or 5000, ntype or "info")
@@ -289,7 +402,7 @@ local function SpeedwayNotify(title, description, ntype, duration)
     end
 end
 
-local function SpeedwayAlert(header, content, duration)
+function SpeedwayAlert(header, content, duration)
     local provider = Config.NotificationProvider or "ox_lib"
     if provider == "okokNotify" or provider == "ox_lib" then
         lib.alertDialog({ header = header or "", content = content or "", centered = true, duration = duration or 10000 })
@@ -332,8 +445,6 @@ CreateThread(function()
         options = {
             { event = 'speedway:client:createLobby', icon = 'fa-solid fa-flag-checkered', label = loc("create_lobby"), canInteract = function() return not hasLobby end },
             { event = 'speedway:client:joinLobby',   icon = 'fa-solid fa-user-plus',         label = loc("join_lobby"),   canInteract = function() return hasLobby and not currentLobby end },
-            { event = 'speedway:client:startRace',   icon = 'fa-solid fa-flag-checkered',   label = loc("start_race"),    canInteract = function() return currentLobby and lobbyOwner == GetPlayerServerId(PlayerId()) end },
-            { event = 'speedway:client:leaveLobby',  icon = 'fa-solid fa-sign-out-alt',     label = loc("leave_lobby"),   canInteract = function() return currentLobby end },
         },
         distance = 2.5
     })
@@ -454,6 +565,10 @@ end)
 RegisterNetEvent('speedway:hideLobbyWindow', function()
     HideLobbyDisplay()
     CloseVehicleSelectionUI()
+    -- Ensure interact mode is off
+    SetNuiFocusKeepInput(false)
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'lobbyFocus', on = false })
 end)
 
 -- Vehicle selection countdown overlay
@@ -517,6 +632,14 @@ RegisterNUICallback('timeoutDismiss', function(_, cb)
     SetNuiFocus(false, false)
     cb('ok')
 end)
+
+--------------------------------------------------------------------------------
+-- Auto-interact with lobby panel while holding target (Left Alt) near the lobby ped
+--------------------------------------------------------------------------------
+local autoFocusActive = false
+speedwaySuppressAutoUntilAltUp = false
+
+-- Removed Alt long-press simulated targeting loop; use F6 toggle for reliable interaction
 
 RegisterNetEvent('speedway:client:leaveLobby', function()
     if not hasLobby then

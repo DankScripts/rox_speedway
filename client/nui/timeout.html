@@ -14,6 +14,50 @@
     button { background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 10px 14px; font-weight: 600; cursor: pointer; }
     button:hover { background: #1d4ed8; }
     .titleIcon { font-size: 18px; }
+
+    /* Lobby tablet styles */
+    :root {
+      --bg: #0f121a;
+      --panel-bg1: #1b2030;
+      --panel-bg2: #161b28;
+      --border: rgba(255,255,255,0.08);
+      --border-strong: rgba(255,255,255,0.14);
+      --glow: rgba(0, 170, 255, 0.25);
+      --text: #e9eef7;
+      --muted: #9aa6bd;
+      --host: #ffd700;
+    }
+  /* Lobby overlay: left-center and non-interactive (no focus capture) */
+  .lobbyOverlay { position: fixed; inset:0; display:none; align-items:center; justify-content:flex-start; background: none; pointer-events: none; }
+    .tablet {
+      width: 420px; max-width: 46vw; margin-left: 2.2vw;
+      background: linear-gradient(180deg, var(--panel-bg1), var(--panel-bg2));
+      border-radius: 18px; border: 1px solid var(--border);
+      box-shadow: 0 10px 32px rgba(0,0,0,0.45), 0 0 0 1px var(--border), inset 0 0 64px var(--glow);
+      color: var(--text); overflow:hidden;
+      /* requested: semi-transparency + 50% scale */
+      opacity: 0.65;
+      transform: scale(0.8);
+      transform-origin: left center;
+    }
+    /* Interact mode toggled from client (enables pointer input briefly) */
+    .lobbyOverlay.interact { pointer-events: auto; }
+    .tablet.interact { opacity: 0.92; box-shadow: 0 0 0 2px var(--glow), 0 10px 32px rgba(0,0,0,0.55); }
+    .tablet__bezel { padding: 18px 18px 12px 18px; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.08)); }
+    .tablet__notch { width: 96px; height: 8px; border-radius: 8px; background: rgba(255,255,255,0.08); margin: 0 auto 8px auto; }
+    .tablet__title { text-align:center; font-weight:600; letter-spacing:.3px; }
+    .tablet__body { padding: 14px 18px 18px 18px; }
+    .lobbyTable { width:100%; border-collapse:collapse; margin: 6px 0 14px 0; }
+    .lobbyTable thead th { text-align:left; font-size:13px; font-weight:600; letter-spacing:.2px; color: var(--muted); padding: 8px 10px; border-bottom: 1px solid var(--border-strong); }
+    .lobbyTable tbody td { padding:10px; border-bottom:1px solid var(--border); }
+    .host { color: var(--host); font-weight:700; }
+    .waiting { text-align:center; color: var(--muted); font-size:14px; padding:12px; }
+  .lobbyActions { display:flex; gap:8px; justify-content:flex-end; margin-top: 8px; }
+  .btn { background:#2563eb; color:#fff; border:none; border-radius:8px; padding:10px 12px; font-weight:700; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.25); }
+  .btn:hover { background:#1d4ed8; }
+  .btn-secondary { background:#374151; }
+  .btn-secondary:hover { background:#2b303b; }
+  .hint { font-size:12px; color: var(--muted); text-align:right; margin-top: 6px; }
   </style>
 </head>
 <body>
@@ -26,11 +70,40 @@
       </div>
     </div>
   </div>
+  <!-- Lobby Overlay (tablet-style) -->
+  <div class="lobbyOverlay" id="lobbyOverlay">
+    <div class="tablet">
+      <div class="tablet__bezel">
+        <div class="tablet__notch"></div>
+        <h2 id="lobbyTitle" class="tablet__title">Lobby</h2>
+      </div>
+      <div class="tablet__body">
+        <table class="lobbyTable">
+          <thead><tr><th>Player</th></tr></thead>
+          <tbody id="lobbyMembers"><tr><td class="waiting">Waiting for players...</td></tr></tbody>
+        </table>
+        <div class="lobbyActions">
+          <button id="btnLeave" class="btn btn-secondary">Leave Lobby</button>
+          <button id="btnStart" class="btn">Start Race</button>
+        </div>
+  <div class="hint" id="hint">Press F2 to interact with the lobby.</div>
+      </div>
+    </div>
+  </div>
   <script>
     const overlay = document.getElementById('overlay');
     const msg = document.getElementById('msg');
     const dismiss = document.getElementById('dismiss');
-    const resource = (window.GetParentResourceName && GetParentResourceName()) || 'qb_rox_speedway';
+  const resource = (window.GetParentResourceName && GetParentResourceName()) || 'rox_speedway';
+
+    // Lobby elements
+  const lobbyOverlay = document.getElementById('lobbyOverlay');
+  const lobbyTitle = document.getElementById('lobbyTitle');
+  const lobbyMembers = document.getElementById('lobbyMembers');
+  const btnStart = document.getElementById('btnStart');
+  const btnLeave = document.getElementById('btnLeave');
+  const hint = document.getElementById('hint');
+  let lobbyState = { hostName: null, lobbyName: null };
 
     window.addEventListener('message', (e) => {
       const data = e.data || {};
@@ -39,6 +112,47 @@
         overlay.style.display = 'flex';
       } else if (data.action === 'hideTimeoutModal') {
         overlay.style.display = 'none';
+      } else if (data.action === 'showLobby') {
+        lobbyTitle.textContent = data.lobbyName || 'Lobby';
+        const members = Array.isArray(data.members) ? data.members : [];
+        lobbyState.hostName = data.hostName || null;
+        lobbyState.lobbyName = data.lobbyName || null;
+        lobbyMembers.innerHTML = '';
+        if (!members.length) {
+          lobbyMembers.innerHTML = '<tr><td class="waiting">Waiting for players...</td></tr>';
+        } else {
+          members.forEach((m, idx) => {
+            const tr = document.createElement('tr');
+            const isHost = data.hostName ? (m === data.hostName) : (idx === 0);
+            tr.innerHTML = `<td${isHost ? ' class="host"' : ''}>${m}${isHost ? ' (Host)' : ''}</td>`;
+            lobbyMembers.appendChild(tr);
+          });
+        }
+        // Only host sees Start button (client provides meIsHost flag)
+        const meIsHost = data.meIsHost === true || false;
+        btnStart.style.display = meIsHost ? 'inline-flex' : 'none';
+        lobbyOverlay.style.display = 'flex';
+      } else if (data.action === 'lobbyFocus') {
+        const on = !!data.on;
+        lobbyOverlay.classList.toggle('interact', on);
+        const tab = document.querySelector('.tablet');
+        if (tab) tab.classList.toggle('interact', on);
+        hint.style.display = on ? 'none' : 'block';
+      } else if (data.action === 'hideLobby') {
+        lobbyOverlay.style.display = 'none';
+      }
+    });
+
+    // Signal to client Lua that NUI is ready
+    window.addEventListener('DOMContentLoaded', () => {
+      try {
+        fetch(`https://${resource}/nuiReady`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+      } catch (e) {
+        // ignore
       }
     });
 
@@ -48,6 +162,30 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({})
       }).catch(() => {});
+    });
+
+    // Allow ESC to exit interact mode and return to passive lobby preview
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        fetch(`https://${resource}/lobbyCancel`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({}) }).catch(()=>{});
+      }
+    });
+
+    // Update hint text on showLobby using provided key label
+    window.addEventListener('message', (e) => {
+      const data = e.data || {};
+      if (data.action === 'showLobby') {
+        const label = (data.keyLabel && String(data.keyLabel)) || 'Left Alt';
+        hint.textContent = `Press ${label} to interact with the lobby.`;
+      }
+    });
+
+    // Button clicks
+    btnStart.addEventListener('click', () => {
+      fetch(`https://${resource}/lobbyStart`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ lobbyName: lobbyState.lobbyName }) }).catch(()=>{});
+    });
+    btnLeave.addEventListener('click', () => {
+      fetch(`https://${resource}/lobbyLeave`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({}) }).catch(()=>{});
     });
   </script>
 </body>

@@ -11,12 +11,12 @@ shared_scripts {
 }
 
 client_scripts {
-  'client/c_fuel.lua',       -- <-- matches your filename
+  'client/c_fuel.lua',       -- add custom fuel script here
   'client/c_keys.lua',       -- centralized vehicle-keys support
   'client/c_customs.lua',    -- vehicle cosmetics & paints
   'client/c_function.lua',
   'client/c_main.lua',
-  --'client/c_pit.lua',      -- pit stop system (WIP NOT READY)
+  'client/c_pit.lua',      -- pitstop logic
 }
 
 server_scripts {

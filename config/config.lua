@@ -20,11 +20,17 @@ Config.ZoneDebug   = false      -- Polyzone/lib.zones visualization (red spheres
 Config.RankingInvert = false
 
 --- Choose your notification provider: "ox_lib", "okokNotify" or "rtx_notify"
-Config.NotificationProvider = "ox_lib"
+Config.NotificationProvider = "okokNotify"
+
+-- Default keybind for opening lobby controls (players can remap in FiveM bindings)
+-- Use FiveM key names, e.g., 'LMENU' (Left Alt), 'F6', 'E', etc.
+Config.InteractKey = 'F2'
+-- Human-friendly label shown in the UI hint
+Config.InteractKeyLabel = 'F2'
 
 --- Optional if you have Raceway Leaderboard Display by Glitchdetector
 Config.Leaderboard = {
-    enabled = false,
+    enabled = true,
     -- How often to push updates to AMIR (ms). Too frequent causes flicker.
     updateIntervalMs = 1000,
     -- How often to flip between Names and Times on the board (ms)

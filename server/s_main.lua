@@ -745,5 +745,55 @@ RegisterNetEvent("speedway:client:fillFuel", function(netId)
   if GetResourceState("LegacyFuel")    == "started" then exports["LegacyFuel"]:SetFuel(v,100) end
   if GetResourceState("cdn-fuel")      == "started" then exports["cdn-fuel"]:SetFuel(v,100) end
   if GetResourceState("okokGasStation")== "started" then exports["okokGasStation"]:SetFuel(v,100) end
-  if GetResourceState("ox_fuel")       == "started" then Entity(v).state.fuel = 100.0 end
+  if GetResourceState("ox_fuel")       == "started" then
+    local st = Entity(v).state
+    if st and st.set then st:set("fuel", 100.0, true) end
+  end
+end)
+
+--------------------------------------------------------------------------------
+-- SERVER-AUTHORITATIVE FUEL SYNC (called from client after pit stop)
+--------------------------------------------------------------------------------
+RegisterNetEvent("speedway:server:setFuel", function(netId, level)
+  local src = source -- reserved if we later want to restrict
+  if type(netId) ~= 'number' or type(level) ~= 'number' then return end
+  if level < 0 then level = 0 end; if level > 100 then level = 100 end
+  local v = NetworkGetEntityFromNetworkId(netId)
+  if not v or v == 0 or not DoesEntityExist(v) then return end
+
+  -- Native baseline
+  SetVehicleFuelLevel(v, level + 0.0)
+
+  -- Common fuel scripts (server-side exports if available)
+  if GetResourceState("LegacyFuel")     == "started" and exports["LegacyFuel"] and exports["LegacyFuel"].SetFuel then exports["LegacyFuel"]:SetFuel(v, level) end
+  if GetResourceState("cdn-fuel")       == "started" and exports["cdn-fuel"]   and exports["cdn-fuel"].SetFuel   then exports["cdn-fuel"]:SetFuel(v, level) end
+  if GetResourceState("okokGasStation") == "started" and exports["okokGasStation"] and exports["okokGasStation"].SetFuel then exports["okokGasStation"]:SetFuel(v, level) end
+
+  -- ox_fuel uses statebags
+  if GetResourceState("ox_fuel") == "started" then
+    local st = Entity(v).state
+    if st and st.set then st:set("fuel", level + 0.0, true) end
+  end
+
+  if Config.DebugPrints then
+    print(("[Speedway] Server fuel sync: netId=%s -> %.1f"):format(tostring(netId), level))
+  end
+
+  -- Reassert a couple more times to win any late ticks from fuel scripts that reapply old cached values
+  CreateThread(function()
+    local tries = { 400, 1000 }
+    for _, waitMs in ipairs(tries) do
+      Wait(waitMs)
+      if DoesEntityExist(v) then
+        SetVehicleFuelLevel(v, level + 0.0)
+        if GetResourceState("LegacyFuel") == "started" and exports["LegacyFuel"] and exports["LegacyFuel"].SetFuel then
+          exports["LegacyFuel"]:SetFuel(v, level)
+        end
+        if GetResourceState("ox_fuel") == "started" then
+          local st = Entity(v).state
+          if st and st.set then st:set("fuel", level + 0.0, true) end
+        end
+      end
+    end
+  end)
 end)
