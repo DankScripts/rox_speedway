@@ -21,21 +21,21 @@ _Originally based on [KOA_ROX_SPEEDWAY by MaxSuperTech](https://github.com/MaxSu
 - Lobby management (start, leave, close)  
 - Full client-server flow (race lifecycle)  
 - Clean separation with ox_lib, localized texts  
-- **Optional “Raceway Leaderboard Display” integration by Glitchdetector**  
+- **Optional “Raceway Leaderboard Display” integration by Glitchdetector** Link below in Notes
 
 ### Work In Progress
-- **Driver position ranking system & HUD refinements**  
+- **Driver position ranking system & HUD refinements**
 - **Pit Crew** NPC animation refinements
+- **Finish setting coords for remaining tracks**
 
 ### Notes
 
-- [AMIR Leaderboard](https://github.com/glitchdetector/amir-leaderboard)
-
+**For now only the short track is fully setup**
 **Race Start Delay:**
 You can now configure the race start countdown delay in `config/config.lua`:
 
 ```lua
-Config.RaceStartDelay = 3 -- Default is 3 seconds for testing, set up to 10 for longer countdown
+Config.RaceStartDelay = 10 -- Default countdown is 10 seconds
 ```
 
 Players generally prefer 10 seconds or less. Adjust as needed for your server.
@@ -80,6 +80,7 @@ Flicker avoidance:
 
 ---
 
+
 ## 🇫🇷 FRANÇAIS
 
 ### Fonctionnalités
@@ -98,27 +99,30 @@ Flicker avoidance:
 - Gestion des lobbies (démarrer, quitter, fermer)  
 - Flux complet client-serveur (cycle de vie de la course)  
 - Texte localisé avec ox_lib  
-- **Intégration optionnelle de “Raceway Leaderboard Display” par Glitchdetector**  
+- **Intégration optionnelle de “Raceway Leaderboard Display” par Glitchdetector** Lien ci-dessous dans Remarques
 
 ### En cours
-- **Affichage du classement des pilotes & améliorations HUD**
+- **Affichage du classement des pilotes & améliorations HUD**  
 - Améliorations des animations des PNJ de l'équipe de stand
+- **Finir de définir les coordonnées pour les autres circuits**
 
 ### Remarques
-- [AMIR Leaderboard](https://github.com/glitchdetector/amir-leaderboard)
 
+**Pour l’instant, seul le circuit court est entièrement configuré**
 **Délai de départ de la course :**
 Vous pouvez maintenant configurer le délai du compte à rebours dans `config/config.lua` :
 
 ```lua
-Config.RaceStartDelay = 3 -- Par défaut 3 secondes pour les tests, jusqu'à 10 pour un compte à rebours plus long
+Config.RaceStartDelay = 10 -- Le compte à rebours par défaut est de 10 secondes
 ```
 
-Les joueurs préfèrent généralement 10 secondes ou moins. Ajustez selon vos besoins.
+Les joueurs préfèrent généralement 10 secondes ou moins. Ajustez selon vos besoins pour votre serveur.
+
+- [AMIR Leaderboard](https://github.com/glitchdetector/amir-leaderboard)
 
 ### AMIR Leaderboard (optionnel)
 
-Si vous utilisez l'affichage Raceway Leaderboard de Glitchdetector, cette ressource peut le piloter en direct avec le même ordre que le HUD.
+Si vous utilisez l’affichage Raceway Leaderboard de Glitchdetector, cette ressource peut le piloter en direct avec le même ordre que le HUD.
 
 - Repo : [AMIR Leaderboard](https://github.com/glitchdetector/amir-leaderboard)
 - Activez dans `config/config.lua` via `Config.Leaderboard.enabled = true`
@@ -129,7 +133,7 @@ Extrait de configuration :
 ```lua
 Config.Leaderboard = {
   enabled = true,
-  updateIntervalMs = 1000,   -- cadence d'envoi ; plus bas peut provoquer du scintillement
+  updateIntervalMs = 1000,   -- cadence d’envoi ; plus bas peut provoquer du scintillement
   toggleIntervalMs = 2000,   -- fréquence de bascule Noms <-> Temps
   viewMode = "toggle",       -- "toggle" ou "names" ("times" seul non supporté)
   timeMode = "total",        -- comment les temps sont calculés : "total" ou "lap"
@@ -150,11 +154,12 @@ Commande runtime (hôte/admin) :
 
 Évitement du scintillement :
 
-- Le serveur n'envoie les mises à jour AMIR que lors de changements de contenu (ordre/titre de tour) ou lors d'une bascule, ce qui évite le clignotement du tableau.
+- Le serveur n’envoie les mises à jour AMIR que lors de changements de contenu (ordre/titre de tour) ou lors d’une bascule, ce qui évite le clignotement du tableau.
 
 🛠️ Contributions & retours bienvenus !
 
 ---
+
 
 ## 🇩🇪 DEUTSCH
 
@@ -174,23 +179,26 @@ Commande runtime (hôte/admin) :
 - Lobby-Verwaltung (Start, Verlassen, Schließen)  
 - Vollständiger Client-Server-Ablauf (Race Lifecycle)  
 - Saubere Trennung mit ox_lib, lokalisierte Texte  
-- **Optionale Integration der “Raceway Leaderboard Display” von Glitchdetector**  
+- **Optionale Integration der “Raceway Leaderboard Display” von Glitchdetector** Link unten in Hinweise
 
 ### In Arbeit
-- **Fahrerpositions-Ranking & HUD-Verbesserungen**
+- **Fahrerpositions-Ranking & HUD-Verbesserungen**  
 - Verbesserungen der Animationen der Boxencrew-NPCs
+- **Zielkoordinaten für verbleibende Strecken festlegen**
 
 ### Hinweise
-- [AMIR Leaderboard](https://github.com/glitchdetector/amir-leaderboard)
 
+**Derzeit ist nur die Kurzstrecke vollständig eingerichtet**
 **Rennstart-Verzögerung:**
 Das Start-Countdown-Delay kann jetzt in `config/config.lua` konfiguriert werden:
 
 ```lua
-Config.RaceStartDelay = 3 -- Standard 3 Sekunden für Tests, bis zu 10 für längeren Countdown
+Config.RaceStartDelay = 10 -- Standard-Countdown ist 10 Sekunden
 ```
 
-Spieler bevorzugen meist 10 Sekunden oder weniger. Passe dies nach Bedarf an.
+Spieler bevorzugen meist 10 Sekunden oder weniger. Passe dies nach Bedarf für deinen Server an.
+
+- [AMIR Leaderboard](https://github.com/glitchdetector/amir-leaderboard)
 
 ### AMIR Leaderboard (optional)
 
@@ -231,6 +239,3 @@ Flackervermeidung:
 🛠️ Beiträge & Feedback willkommen!
 
 ---
-
-# rox_speedway
-# UltimateTransit

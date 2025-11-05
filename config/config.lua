@@ -3,7 +3,7 @@ Config = Config or {}
 Config.Locale = "en"  -- change to "fr" or "de" as needed
 -- Race start delay in seconds (time before race begins after countdown)
 -- Default is 3 for testing, but most players prefer 10 seconds or less
-Config.RaceStartDelay = 3
+Config.RaceStartDelay = 10
 -- How often clients report progress to the server (ms). Lower = more responsive positions.
 -- Keep between 75 and 200 to balance responsiveness vs. server load.
 Config.ProgressTickMs = 150
@@ -20,7 +20,7 @@ Config.ZoneDebug   = false      -- Polyzone/lib.zones visualization (red spheres
 Config.RankingInvert = false
 
 --- Choose your notification provider: "ox_lib", "okokNotify" or "rtx_notify"
-Config.NotificationProvider = "okokNotify"
+Config.NotificationProvider = "ox_lib"
 
 -- Default keybind for opening lobby controls (players can remap in FiveM bindings)
 -- Use FiveM key names, e.g., 'LMENU' (Left Alt), 'F6', 'E', etc.
@@ -30,7 +30,7 @@ Config.InteractKeyLabel = 'F2'
 
 --- Optional if you have Raceway Leaderboard Display by Glitchdetector
 Config.Leaderboard = {
-    enabled = true,
+    enabled = false,
     -- How often to push updates to AMIR (ms). Too frequent causes flicker.
     updateIntervalMs = 1000,
     -- How often to flip between Names and Times on the board (ms)
