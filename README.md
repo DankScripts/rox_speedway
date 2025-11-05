@@ -21,10 +21,11 @@ _Originally based on [KOA_ROX_SPEEDWAY by MaxSuperTech](https://github.com/MaxSu
 - Lobby management (start, leave, close)  
 - Full client-server flow (race lifecycle)  
 - Clean separation with ox_lib, localized texts  
+- **Optional “Raceway Leaderboard Display” integration by Glitchdetector**  
 
 ### Work In Progress
 - **Driver position ranking system & HUD refinements**  
-- **Optional “Raceway Leaderboard Display”** integration by Glitchdetector  
+- **Pit Crew** NPC animation refinements
 
 ### Notes
 
@@ -97,10 +98,11 @@ Flicker avoidance:
 - Gestion des lobbies (démarrer, quitter, fermer)  
 - Flux complet client-serveur (cycle de vie de la course)  
 - Texte localisé avec ox_lib  
+- **Intégration optionnelle de “Raceway Leaderboard Display” par Glitchdetector**  
 
 ### En cours
 - **Affichage du classement des pilotes & améliorations HUD**
-- **Intégration optionnelle de “Raceway Leaderboard Display” par Glitchdetector**
+- Améliorations des animations des PNJ de l'équipe de stand
 
 ### Remarques
 - [AMIR Leaderboard](https://github.com/glitchdetector/amir-leaderboard)
@@ -172,10 +174,11 @@ Commande runtime (hôte/admin) :
 - Lobby-Verwaltung (Start, Verlassen, Schließen)  
 - Vollständiger Client-Server-Ablauf (Race Lifecycle)  
 - Saubere Trennung mit ox_lib, lokalisierte Texte  
+- **Optionale Integration der “Raceway Leaderboard Display” von Glitchdetector**  
 
 ### In Arbeit
 - **Fahrerpositions-Ranking & HUD-Verbesserungen**
-- **Optionale Integration der “Raceway Leaderboard Display” von Glitchdetector**
+- Verbesserungen der Animationen der Boxencrew-NPCs
 
 ### Hinweise
 - [AMIR Leaderboard](https://github.com/glitchdetector/amir-leaderboard)
