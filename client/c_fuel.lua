@@ -87,3 +87,14 @@ function SetFullFuel(veh)
     TriggerServerEvent('speedway:server:setFuel', netId, 100.0)
   end
 end
+
+-- Apply fuel from server request (native must be client-side)
+RegisterNetEvent('rox_speedway:client:setFuel', function(netId, level)
+  if type(netId) ~= 'number' then return end
+  level = tonumber(level) or 0.0
+  if level < 0.0 then level = 0.0 end; if level > 100.0 then level = 100.0 end
+  local v = NetworkGetEntityFromNetworkId(netId)
+  if not v or v == 0 or not DoesEntityExist(v) then return end
+  -- Only the client with control can truly set it; others will no-op
+  SetFuelLevel(v, level)
+end)

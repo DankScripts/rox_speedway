@@ -331,6 +331,7 @@ RegisterNetEvent("speedway:startRace", function(lobbyName)
   end
 
   lob.isStarted          = true
+  lob.lastLeader         = -1
   lob.progress           = {}
   lob.checkpointProgress = {}
   lob.lapProgress        = {}
@@ -423,6 +424,8 @@ RegisterNetEvent("speedway:startRace", function(lobbyName)
     if #lob.players > 0 and data.received > 0 then
       pendingChoices[lobbyName] = nil
       local usedPlates = {}
+      -- Notify ALL clients to switch jumbotron to LIVE now that the race is about to begin
+      TriggerClientEvent('rox_speedway:cam:broadcastOn', -1)
       for idx, pid in ipairs(lob.players) do
         local m = data.selected[pid]
         if m then
@@ -447,6 +450,8 @@ RegisterNetEvent("speedway:startRace", function(lobbyName)
       -- nobody left or nobody selected: cancel race
       pendingChoices[lobbyName] = nil
       lob.isStarted = false
+      -- Ensure broadcast turns off if it was turned on earlier for this lobby
+      TriggerClientEvent('rox_speedway:cam:broadcastOff', -1)
       for _, pid in ipairs(lob.players) do
         TriggerClientEvent('ox_lib:notify', pid, {
           title = "Speedway",
@@ -482,6 +487,8 @@ RegisterNetEvent("speedway:selectedVehicle", function(lobbyName, model)
   if data.received == data.total then
     pendingChoices[lobbyName] = nil
   local usedPlates = {}
+  -- Race is about to begin for all; flip jumbotron LIVE for every client
+  TriggerClientEvent('rox_speedway:cam:broadcastOn', -1)
   for idx, pid in ipairs(lob.players) do
       local m   = data.selected[pid]
       local sp  = Config.GridSpawnPoints[idx]
@@ -534,6 +541,20 @@ RegisterNetEvent("speedway:updateProgress", function(lobbyName, dist)
     end
     return a.dist > b.dist
   end)
+
+  -- Broadcast leader changes to all clients for spectator cameras
+  do
+    if #board > 0 then
+      local leaderId = board[1].id
+      lob.lastLeader = lob.lastLeader or -1
+      if leaderId ~= lob.lastLeader then
+        lob.lastLeader = leaderId
+        TriggerClientEvent('speedway:leaderChanged', -1, lobbyName, leaderId)
+        -- Inform feed module so it can request screenshots from the leader's client
+        TriggerEvent('rox_speedway:feed:setLeader', lobbyName, leaderId)
+      end
+    end
+  end
 
   if Config.DebugPrints then
     local dbg = {}
@@ -725,6 +746,11 @@ RegisterNetEvent("speedway:lapPassed", function(lobbyName, forcedSrc)
         TriggerClientEvent("speedway:client:destroyprops", pid)
       end
 
+      -- Race fully concluded: switch jumbotron back to IDLE for everyone
+      TriggerClientEvent('rox_speedway:cam:broadcastOff', -1)
+  -- Reset leader tracking for this lobby
+  lob.lastLeader = -1
+
       lobbies[lobbyName] = nil
       TriggerClientEvent("speedway:setLobbyState", -1, next(lobbies) ~= nil)
     end
@@ -740,15 +766,14 @@ end)
 
 RegisterNetEvent("speedway:client:fillFuel", function(netId)
   local v = NetworkGetEntityFromNetworkId(netId)
-  if not DoesEntityExist(v) then return end
-  SetVehicleFuelLevel(v, 100.0)
-  if GetResourceState("LegacyFuel")    == "started" then exports["LegacyFuel"]:SetFuel(v,100) end
-  if GetResourceState("cdn-fuel")      == "started" then exports["cdn-fuel"]:SetFuel(v,100) end
-  if GetResourceState("okokGasStation")== "started" then exports["okokGasStation"]:SetFuel(v,100) end
-  if GetResourceState("ox_fuel")       == "started" then
+  if not v or v == 0 or not DoesEntityExist(v) then return end
+  -- Server-safe: only use ox_fuel statebag here; most exports are client-only
+  if GetResourceState("ox_fuel") == "started" then
     local st = Entity(v).state
     if st and st.set then st:set("fuel", 100.0, true) end
   end
+  -- Ask clients to apply native fuel locally (driver will usually own the entity)
+  TriggerClientEvent('rox_speedway:client:setFuel', -1, netId, 100.0)
 end)
 
 --------------------------------------------------------------------------------
@@ -761,13 +786,8 @@ RegisterNetEvent("speedway:server:setFuel", function(netId, level)
   local v = NetworkGetEntityFromNetworkId(netId)
   if not v or v == 0 or not DoesEntityExist(v) then return end
 
-  -- Native baseline
-  SetVehicleFuelLevel(v, level + 0.0)
-
-  -- Common fuel scripts (server-side exports if available)
-  if GetResourceState("LegacyFuel")     == "started" and exports["LegacyFuel"] and exports["LegacyFuel"].SetFuel then exports["LegacyFuel"]:SetFuel(v, level) end
-  if GetResourceState("cdn-fuel")       == "started" and exports["cdn-fuel"]   and exports["cdn-fuel"].SetFuel   then exports["cdn-fuel"]:SetFuel(v, level) end
-  if GetResourceState("okokGasStation") == "started" and exports["okokGasStation"] and exports["okokGasStation"].SetFuel then exports["okokGasStation"]:SetFuel(v, level) end
+  -- Native baseline cannot be called server-side; rely on client + fuel scripts
+  -- Avoid calling client-only exports from server (causes 'No such export' spam)
 
   -- ox_fuel uses statebags
   if GetResourceState("ox_fuel") == "started" then
@@ -779,20 +799,16 @@ RegisterNetEvent("speedway:server:setFuel", function(netId, level)
     print(("[Speedway] Server fuel sync: netId=%s -> %.1f"):format(tostring(netId), level))
   end
 
-  -- Reassert a couple more times to win any late ticks from fuel scripts that reapply old cached values
+  -- Reassert on clients too to overcome any late ticks from external scripts
   CreateThread(function()
-    local tries = { 400, 1000 }
+    local tries = { 200, 800 }
     for _, waitMs in ipairs(tries) do
       Wait(waitMs)
-      if DoesEntityExist(v) then
-        SetVehicleFuelLevel(v, level + 0.0)
-        if GetResourceState("LegacyFuel") == "started" and exports["LegacyFuel"] and exports["LegacyFuel"].SetFuel then
-          exports["LegacyFuel"]:SetFuel(v, level)
-        end
-        if GetResourceState("ox_fuel") == "started" then
-          local st = Entity(v).state
-          if st and st.set then st:set("fuel", level + 0.0, true) end
-        end
+      -- Reassert on clients; external scripts may tick and revert
+      TriggerClientEvent('rox_speedway:client:setFuel', -1, netId, level + 0.0)
+      if DoesEntityExist(v) and GetResourceState("ox_fuel") == "started" then
+        local st = Entity(v).state
+        if st and st.set then st:set("fuel", level + 0.0, true) end
       end
     end
   end)
