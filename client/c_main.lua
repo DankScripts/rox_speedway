@@ -230,7 +230,15 @@ RegisterNUICallback('lobbyCancel', function(_, cb)
     speedwaySuppressAutoUntilAltUp = true
     cb('ok')
 end)
+
+-- Safety: cleanup on resource stop
+AddEventHandler('onResourceStop', function(resName)
+    if resName ~= GetCurrentResourceName() then return end
+    -- Reuse the same cleanup as server-triggered destroy
+    TriggerEvent('speedway:client:destroyprops')
+end)
 local currentProps         = {}
+local currentZones         = {}
 local racerCheckpointIndex = 0
 local inRace               = false
 local myPosition           = 0
@@ -711,6 +719,7 @@ RegisterNetEvent("speedway:prepareStart", function(data)
         RequestModel(pd.prop); while not HasModelLoaded(pd.prop) do Wait(0) end
         for _, c in ipairs(pd.cords) do
             local obj = CreateObject(pd.prop, c.x, c.y, c.z - 1.0, false, false, false)
+            SetEntityAsMissionEntity(obj, true, true)
             PlaceObjectOnGroundProperly(obj); SetEntityHeading(obj, c.w); FreezeEntityPosition(obj, true)
             table.insert(currentProps, obj)
         end
@@ -718,8 +727,14 @@ RegisterNetEvent("speedway:prepareStart", function(data)
 
     -- checkpoint spheres
     racerCheckpointIndex = 0
+    -- clear any previous zones before creating new ones (safety)
+    for _, z in ipairs(currentZones) do
+        if z and z.remove then pcall(function() z:remove() end) end
+    end
+    currentZones = {}
+
     for idx, coord in ipairs(Config.Checkpoints[data.track] or {}) do
-        lib.zones.sphere({
+        local z = lib.zones.sphere({
             coords = coord, radius = 15.0, debug = Config.ZoneDebug,
             onEnter = function()
                 if idx == racerCheckpointIndex + 1 then
@@ -728,10 +743,11 @@ RegisterNetEvent("speedway:prepareStart", function(data)
                 end
             end
         })
+        table.insert(currentZones, z)
     end
 
     -- finish line sphere
-    lib.zones.sphere({
+    local finishZone = lib.zones.sphere({
         name   = "finish_line",
         coords = Config.FinishLine.coords,
         radius = Config.FinishLine.radius,
@@ -743,6 +759,7 @@ RegisterNetEvent("speedway:prepareStart", function(data)
             end
         end
     })
+    table.insert(currentZones, finishZone)
 
     -- now spawn & race
     CreateThread(function()
@@ -873,6 +890,29 @@ RegisterNetEvent("speedway:prepareStart", function(data)
         end)
     end)
 end)
+
+-- Cleanup: remove spawned props and any active checkpoint/finish zones
+RegisterNetEvent("speedway:client:destroyprops", function()
+    -- delete props
+    for _, obj in ipairs(currentProps) do
+        if obj and DoesEntityExist(obj) then
+            DeleteObject(obj)
+        end
+    end
+    currentProps = {}
+    -- remove zones
+    for _, z in ipairs(currentZones) do
+        if z and z.remove then
+            pcall(function() z:remove() end)
+        end
+    end
+    currentZones = {}
+end)
+
+-- Manual cleanup command (optional): removes any spawned props/zones immediately
+RegisterCommand('speedway_cleanup', function()
+    TriggerEvent('speedway:client:destroyprops')
+end, false)
 
 RegisterNetEvent("speedway:youFinished", function()
     SpeedwayNotify("🏁 Speedway", loc("you_finished"), "success", 5000)
