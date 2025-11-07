@@ -516,10 +516,25 @@ end)
 
 --------------------------------------------------------------------------------
 -- 10) CREATE / JOIN / START / LEAVE
+-- Ensure lobby info is requested on player spawn/login
+AddEventHandler('playerSpawned', function()
+    local lobbies = lib.callback.await("speedway:getLobbies", true)
+    if lobbies and #lobbies > 0 then
+        -- If there are lobbies, update local state so join option is available
+        hasLobby = true
+        -- Optionally, you can auto-show the join dialog or notify the player
+    else
+        hasLobby = false
+    end
+end)
 --------------------------------------------------------------------------------
 RegisterNetEvent('speedway:client:createLobby', function()
     if Config.DebugPrints then
         print("[DEBUG] speedway:client:createLobby event triggered")
+    end
+    if hasLobby then
+        SpeedwayNotify(loc("lobby_exists"), "", "error")
+        return
     end
     local dialog = exports['qb-input']:ShowInput({
         header     = loc("create_lobby"),

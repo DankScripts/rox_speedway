@@ -172,6 +172,15 @@ end)
 RegisterNetEvent("speedway:createLobby", function(lobbyName, trackType, lapCount)
   print(string.format("[DEBUG] speedway:createLobby received: lobbyName=%s, trackType=%s, lapCount=%s, src=%s", lobbyName, trackType, lapCount, source))
   local src = source
+  -- Prevent new lobby if any lobby is active
+  if next(lobbies) ~= nil then
+    print("[DEBUG] Cannot create lobby: another lobby is already active.")
+    TriggerClientEvent('ox_lib:notify', src, {
+      description = locale("lobby_exists"),
+      type        = "error"
+    })
+    return
+  end
   if lobbies[lobbyName] then
     print("[DEBUG] Lobby already exists: " .. lobbyName)
     TriggerClientEvent('ox_lib:notify', src, {
@@ -228,6 +237,14 @@ RegisterNetEvent("speedway:joinLobby", function(lobbyName)
     })
     return
   end
+  if lobby.isStarted then
+    TriggerClientEvent('ox_lib:notify', src, {
+      title       = "Speedway",
+      description = "Race already started. You cannot join now. Please come back after the race ends.",
+      type        = "error"
+    })
+    return
+  end
 
   if not table_contains(lobby.players, src) then
     table.insert(lobby.players, src)
@@ -241,12 +258,12 @@ RegisterNetEvent("speedway:joinLobby", function(lobbyName)
   -- update everyone’s lobby info
   for _, id in ipairs(lobby.players) do
     TriggerClientEvent("speedway:updateLobbyInfo", id, {
-  name     = lobbyName,
-  hostName = GetPlayerName(lobby.owner),
-  track    = lobby.track,
-  players  = lobby.players,
-  owner    = lobby.owner,
-  laps     = lobby.laps
+      name     = lobbyName,
+      hostName = GetPlayerName(lobby.owner),
+      track    = lobby.track,
+      players  = lobby.players,
+      owner    = lobby.owner,
+      laps     = lobby.laps
     })
   end
 end)
